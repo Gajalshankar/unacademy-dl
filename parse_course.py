@@ -4,7 +4,7 @@ import requests
 from urlREGEX import URL_REGEX
 import os
 import shutil
-
+import argparse
 
 http_proxy = "http://10.3.100.207:8080"
 https_proxy = "https://10.3.100.207:8080"
@@ -24,14 +24,23 @@ def getUniqueItems(iterable):
             result.append(item)
     return result
 
+
+parser = argparse.ArgumentParser(description='Adding course_url and dest_folder')
+
+parser.add_argument('-u', '--url', help='URL',required=True)
+parser.add_argument('-d', '--dest', help='destination folder name', required=True)
+parser.add_argument('-s', '--start', help='start_lesson', default=0)
+
+args = vars(parser.parse_args())
+
+
 base_url = 'http://unacademy.in'
-course_url = 'https://unacademy.com/course/january-2017-daily-summary-and-analysis-of-the-hindu/Q8Q3FZIV'
+course_url = args['url']
+# course_url = 'https://unacademy.com/course/january-2017-daily-summary-and-analysis-of-the-hindu/Q8Q3FZIV'
 
 r = requests.get(course_url, proxies=proxyDict)
 soup = BeautifulSoup(r.content, "lxml")
-
 lessons = []
-
 for a in soup.find_all('a', href=True):
     lessons.append(a['href'])
 # print(lessons)
@@ -101,7 +110,7 @@ lesson_list = [l for l in lessons if('/lesson/') in l]
 lesson_list = getUniqueItems(lesson_list)
 
 lesson_urls = [base_url + l for l in lesson_list]
-
+print("\n",lesson_urls)
 
 
 def get_img_url(lesson_url):
@@ -124,14 +133,15 @@ def mv_lessonwise(destname):
 	    os.makedirs(target)
 	imgs = [f for f in os.listdir(cur_path) for a in ['.jpeg','.png'] if f.endswith(a)]
 	images = [cur_path + i for i in imgs]
-	final_images = [shutil.move(img,target) for img in images]
+	final_images = [shutil.move(img,	target) for img in images]
 
 
-i = 1
-for lesson_url in lesson_urls:
+i = int(args['start'])
+print("i=",i,len(lesson_urls[int(args['start'])-1:]))
+for lesson_url in lesson_urls[int(args['start'])-1:]:
     img_start_url = set_start_url(get_img_url(lesson_url))
     confirm = download_all(img_start_url,0)
-    mv_lessonwise("lesson_" + str(i))
+    mv_lessonwise(args['dest'] + str(i))
     i = i + 1
 
 # lesson_url = lesson_urls[2]

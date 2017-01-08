@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import requests
 from urlREGEX import URL_REGEX
 import os
+import shutil
 
 
 http_proxy = "http://10.3.100.207:8080"
@@ -44,6 +45,18 @@ def set_start_url(img_start_url):
     img_next_url = '/'.join(img_url_split)
     return img_next_url
 
+def alternate(img_url):
+	img_url_split = img_url.split('/')
+	last_seg = img_url_split[-1].split('.')
+	if(last_seg[1] == 'png'):
+		last_seg[1] = 'jpeg'
+	elif (last_seg[1] == 'jpeg'):
+		last_seg[1] = 'png'
+	img_url_split[-1] = '.'.join(last_seg)
+	img_alternate_url = '/'.join(img_url_split)
+	return img_alternate_url
+
+
 
 def get_next_url(img_start_url):
     img_url_split = img_start_url.split('/')
@@ -66,21 +79,29 @@ def download(url_as_str, dir='./images'):
     return os.system(cmd)
 
 
-def download_all(img_start_url):
+def download_all(img_start_url,change=0):
     """
     Takes STRING url
     """
-    response = download(img_start_url)
-    if (response == 2048):
-        return True
-    else:
-        return download_all(get_next_url(img_start_url))
+    response = download(img_start_url)	
+    if(change == 0):
+    	if (response == 2048):
+    		response = download_all(alternate(img_start_url),1)
+    	else:
+    		return download_all(get_next_url(img_start_url),0)
+    elif (change == 1):
+    	if (response == 2048):
+    		return True
+    	else:
+    		return download_all(get_next_url(img_start_url),0)
+
 
 
 lesson_list = [l for l in lessons if('/lesson/') in l]
 lesson_list = getUniqueItems(lesson_list)
 
 lesson_urls = [base_url + l for l in lesson_list]
+
 
 
 def get_img_url(lesson_url):
@@ -92,22 +113,24 @@ def get_img_url(lesson_url):
     return img_url
 
 
-def mv_lessonwise(dest):
-    cur_path = os.getcwd() + "/images/"
-    target = cur_path + dest
-    print("\n\n MOVING FILES into " + target)
-    if not os.path.exists(target):
-        os.makedirs(target)
-    os.system("mv " + cur_path + "*.{jpeg,png} " + target)
-    # os.system("mv " + cur_path + "*.jpeg " + target)
-    # CAREFUL [TO DO] : *.jpeg and other images have to compared. Basically
-    # ALL FILES from /images/ to /images/lesson_[dest] move kar do :p
+def mv_lessonwise(destname):
+	"""
+	Move .jpeg,.png images to dest folder.
+	"""
+	cur_path = os.getcwd() + "/images/"
+	target = cur_path + destname
+	print("\n\n MOVING FILES into " + target)
+	if not os.path.exists(target):
+	    os.makedirs(target)
+	imgs = [f for f in os.listdir(cur_path) for a in ['.jpeg','.png'] if f.endswith(a)]
+	images = [cur_path + i for i in imgs]
+	final_images = [shutil.move(img,target) for img in images]
 
-# TO DO : If the url error = 404 => test for png and other variants.
+
 i = 1
 for lesson_url in lesson_urls:
     img_start_url = set_start_url(get_img_url(lesson_url))
-    confirm = download_all(img_start_url)
+    confirm = download_all(img_start_url,0)
     mv_lessonwise("lesson_" + str(i))
     i = i + 1
 

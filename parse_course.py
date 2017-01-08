@@ -5,15 +5,16 @@ from urlREGEX import URL_REGEX
 import os
 
 
-http_proxy  = "http://10.3.100.207:8080"
+http_proxy = "http://10.3.100.207:8080"
 https_proxy = "https://10.3.100.207:8080"
-ftp_proxy   = "ftp://10.3.100.207:8080"
+ftp_proxy = "ftp://10.3.100.207:8080"
 
-proxyDict = { 
-              "http"  : http_proxy, 
-              "https" : https_proxy, 
-              "ftp"   : ftp_proxy
-            }
+proxyDict = {
+    "http": http_proxy,
+    "https": https_proxy,
+    "ftp": ftp_proxy
+}
+
 
 def getUniqueItems(iterable):
     result = []
@@ -25,7 +26,7 @@ def getUniqueItems(iterable):
 base_url = 'http://unacademy.in'
 course_url = 'https://unacademy.com/course/january-2017-daily-summary-and-analysis-of-the-hindu/Q8Q3FZIV'
 
-r = requests.get(course_url,proxies=proxyDict)
+r = requests.get(course_url, proxies=proxyDict)
 soup = BeautifulSoup(r.content, "lxml")
 
 lessons = []
@@ -33,6 +34,7 @@ lessons = []
 for a in soup.find_all('a', href=True):
     lessons.append(a['href'])
 # print(lessons)
+
 
 def set_start_url(img_start_url):
     img_url_split = img_start_url.split('/')
@@ -42,6 +44,7 @@ def set_start_url(img_start_url):
     img_next_url = '/'.join(img_url_split)
     return img_next_url
 
+
 def get_next_url(img_start_url):
     img_url_split = img_start_url.split('/')
     last_seg = img_url_split[-1].split('.')
@@ -50,7 +53,6 @@ def get_next_url(img_start_url):
     img_url_split[-1] = '.'.join(last_seg)
     img_next_url = '/'.join(img_url_split)
     return img_next_url
-
 
 
 # TODO : If dir does not exist, create it.
@@ -83,24 +85,33 @@ lesson_urls = [base_url + l for l in lesson_list]
 
 def get_img_url(lesson_url):
     imgs = []
-    lesson_soup = BeautifulSoup(requests.get(lesson_url,proxies=proxyDict).content, "lxml")
+    lesson_soup = BeautifulSoup(requests.get(
+        lesson_url, proxies=proxyDict).content, "lxml")
     image = lesson_soup.find(itemprop='image')
     img_url = re.findall(URL_REGEX, str(image))[0]
     return img_url
 
+
+def mv_lessonwise(dest):
+    cur_path = os.getcwd() + "/images/"
+    target = cur_path + dest
+    print("\n\n MOVING FILES into " + target)
+    if not os.path.exists(target):
+        os.makedirs(target)
+    os.system("mv " + cur_path + "*.{jpeg,png} " + target)
+    # os.system("mv " + cur_path + "*.jpeg " + target)
+    # CAREFUL [TO DO] : *.jpeg and other images have to compared. Basically
+    # ALL FILES from /images/ to /images/lesson_[dest] move kar do :p
+
 # TO DO : If the url error = 404 => test for png and other variants.
+i = 1
+for lesson_url in lesson_urls:
+    img_start_url = set_start_url(get_img_url(lesson_url))
+    confirm = download_all(img_start_url)
+    mv_lessonwise("lesson_" + str(i))
+    i = i + 1
 
-# for lesson_url in lesson_urls:
-# 	# r_lesson = requests.get(lesson_url)
-# 	img_start_url = get_img_url(lesson_url)
-# 	confirm = download_all(get_next_url(img_start_url))
+# lesson_url = lesson_urls[2]
+# print(img_start_url)
 
-# print(lesson_urls)
-lesson_url = lesson_urls[2]
-print(type(lesson_url))
-img_start_url = set_start_url(get_img_url(lesson_url))
-print(img_start_url)
-confirm = download_all(img_start_url)
-print(confirm)
-# print(lesson_list)
-# lesson_list = [l for l in r_lesson.txt if('/lesson/') in l]
+print("\n\n\n" + str(confirm))

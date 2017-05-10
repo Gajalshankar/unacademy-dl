@@ -6,9 +6,14 @@ import os
 import shutil
 import argparse
 
-http_proxy = "http://10.3.100.207:8080"
-https_proxy = "https://10.3.100.207:8080"
-ftp_proxy = "ftp://10.3.100.207:8080"
+# http_proxy = "http://10.3.100.207:8080"
+# https_proxy = "https://10.3.100.207:8080"
+# ftp_proxy = "ftp://10.3.100.207:8080"
+
+http_proxy = ""
+https_proxy = ""
+ftp_proxy = ""
+
 
 proxyDict = {
     "http": http_proxy,
@@ -108,7 +113,8 @@ def download_all(img_start_url,change=0):
 
 
 
-lesson_list = [l for l in lessons if('/lesson/') in l]
+# Added additional caretaking for ?source=Course
+lesson_list = [l for l in lessons if '/lesson/' in l and "?source" not in l]
 lesson_list = getUniqueItems(lesson_list)
 
 lesson_urls = [base_url + l for l in lesson_list]
